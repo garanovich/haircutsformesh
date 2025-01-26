@@ -172,6 +172,10 @@ class RigToWeightPaintOperator(bpy.types.Operator):
             (obj.parent_bone, obj) for obj in selected_objects if obj.parent_bone
         ]
 
+        wm = bpy.context.window_manager
+        tot = len(selected_objects)
+        wm.progress_begin(0, tot)
+        i = 0
         # Создаём модификатор Armature и отвязываем объекты
         for bone_name, obj in bone_object_pairs:
             bpy.context.view_layer.objects.active = obj
@@ -187,13 +191,23 @@ class RigToWeightPaintOperator(bpy.types.Operator):
                 vertex_group = obj.vertex_groups.new(name=bone_name)
                 vertices = [v.index for v in obj.data.vertices]
                 vertex_group.add(vertices, 1.0, 'REPLACE')
-
+            i+=1
+            wm.progress_update(i)
+        '''
         # Привязываем объекты к арматуре
         for obj in selected_objects:
             obj.select_set(True)
             armature.select_set(True)
             bpy.context.view_layer.objects.active = armature
             bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+            i+=1
+            wm.progress_update(i)
+        '''
+        wm.progress_end()
+
+        bpy.context.view_layer.objects.active = armature
+        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+
 
     def invoke(self, context, event):
         return self.execute(context)
