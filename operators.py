@@ -158,42 +158,6 @@ class RigToWeightPaintOperator(bpy.types.Operator):
             self.report({'ERROR'}, f"Error: {e}")
         return {'FINISHED'}
 
-    def prepare_objects(self, all_objects):
-        for obj in all_objects:
-            # Проверяем, является ли объект типом 'MESH'
-            if obj.type != 'MESH':
-                bpy.context.view_layer.objects.active = obj
-                bpy.ops.object.convert(target='MESH')
-            
-            # Устанавливаем уникальные данные для объекта
-            if obj.data:
-                obj.data = obj.data.copy()
-            
-            # Объединяем дочерние объекты с родительским объектом
-            if obj.children:
-                bpy.context.view_layer.objects.active = obj
-                bpy.ops.object.select_all(action='DESELECT')
-                obj.select_set(True)
-                
-                for child in obj.children:
-                    child.select_set(True)
-                
-                bpy.ops.object.join()
-
-    class RigToWeightPaintOperator(bpy.types.Operator):
-    """Convert Rig to Weight Paint"""
-    bl_idname = "object.convert_rig_to_weight_paint"
-    bl_label = "Convert Rig to Weight Paint"
-    bl_options = {'REGISTER', 'UNDO'}
-
-    def execute(self, context):
-        try:
-            self.convert_rig_to_weight_paint()
-            self.report({'INFO'}, "Conversion completed successfully")
-        except Exception as e:
-            self.report({'ERROR'}, f"Error: {e}")
-        return {'FINISHED'}
-
     def convert_rig_to_weight_paint(self):
         # Определяем активную арматуру
         armature = bpy.context.active_object
