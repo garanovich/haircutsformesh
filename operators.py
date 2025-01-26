@@ -180,24 +180,32 @@ class RigToWeightPaintOperator(bpy.types.Operator):
                 
                 bpy.ops.object.join()
 
+    class RigToWeightPaintOperator(bpy.types.Operator):
+    """Convert Rig to Weight Paint"""
+    bl_idname = "object.convert_rig_to_weight_paint"
+    bl_label = "Convert Rig to Weight Paint"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        try:
+            self.convert_rig_to_weight_paint()
+            self.report({'INFO'}, "Conversion completed successfully")
+        except Exception as e:
+            self.report({'ERROR'}, f"Error: {e}")
+        return {'FINISHED'}
+
     def convert_rig_to_weight_paint(self):
         # Определяем активную арматуру
         armature = bpy.context.active_object
         if not armature or armature.type != 'ARMATURE':
             raise ValueError("Please select an armature.")
 
-        # Находим все объекты, привязанные к арматуре
-        all_objects = [obj for obj in bpy.context.scene.objects if obj.parent == armature]
-
-        # Подготовка объектов
-        self.prepare_objects(all_objects)
-
-        # Находим все объекты ещё раз
-        all_objects = [obj for obj in bpy.context.scene.objects if obj.parent == armature]
+        # Находим все выделенные объекты, привязанные к арматуре
+        selected_objects = [obj for obj in bpy.context.selected_objects if obj.parent == armature]
 
         # Создаём пары "кость - объект"
         bone_object_pairs = [
-            (obj.parent_bone, obj) for obj in all_objects if obj.parent_bone
+            (obj.parent_bone, obj) for obj in selected_objects if obj.parent_bone
         ]
 
         # Создаём модификатор Armature и отвязываем объекты
@@ -216,24 +224,12 @@ class RigToWeightPaintOperator(bpy.types.Operator):
                 vertices = [v.index for v in obj.data.vertices]
                 vertex_group.add(vertices, 1.0, 'REPLACE')
 
-        # Объединяем все объекты
-        for obj in all_objects:
+        # Привязываем объекты к арматуре
+        for obj in selected_objects:
             obj.select_set(True)
-        bpy.context.view_layer.objects.active = all_objects[0]
-        bpy.ops.object.join()
-        joined_mesh = bpy.context.active_object
-
-        # Устанавливаем origin итогового меша в арматуру
-        cursor_location = bpy.context.scene.cursor.location.copy()
-        bpy.context.scene.cursor.location = armature.location
-        bpy.context.view_layer.objects.active = joined_mesh
-        bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
-        bpy.context.scene.cursor.location = cursor_location
-
-        # Привязываем итоговый меш к арматуре
-        armature.select_set(True)
-        bpy.context.view_layer.objects.active = armature
-        bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
+            armature.select_set(True)
+            bpy.context.view_layer.objects.active = armature
+            bpy.ops.object.parent_set(type='OBJECT', keep_transform=True)
 
     def invoke(self, context, event):
         return self.execute(context)
